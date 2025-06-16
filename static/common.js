@@ -115,7 +115,7 @@ function attachments2html(attachments) {
         a=attachments[aid]
         switch(a.Type) {
             case 1:
-            s+=`<img class="msgmedia" src="/files/${a.URL}"/>`
+            s+=`<a href="/files/${a.URL}" target="_blank"><img class="msgmedia" src="/files/${a.URL}"/></a>`
             break;
             case 2:
             s+=`<video controls class="msgmedia" src="/files/${a.URL}"></video>`
