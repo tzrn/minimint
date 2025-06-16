@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title></title>
+        <link rel="stylesheet" href="styles.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+
+    <body>
+        <div id="notif">
+        </div>
+
+        <h2>Search people:</h2>
+        <form action="javascript:loadposts(0,true)">
+            <input id="query">
+            <input type="submit">
+        </form><hr>
+
+        <div id="results"></div>
+
+        <script src="common.js"></script>
+        <script>
+            function loadposts(page,clear) {
+                apost("search",{Query:$('query').value,Page:page}).then(r=>r.json()).then(j=>{
+                    if(clear) {
+                        $('results').innerHTML=''
+                    }
+                    if(j.err) {
+                        notify(j.err)
+                    } else {
+                        morebtn=$("moreposts")
+                        if(morebtn) {
+                            morebtn.remove()
+                        }
+                        for(let i=0;i<j.Count;i++) {
+                            r=j.Rs[i]
+                            $("results").innerHTML+=`<a href="/user.html?id=${r.ID}">${r.Name}</a><p>${r.Status}</p><hr>`
+                        }
+                        if(j.Count==20) {
+                            $("results").innerHTML+=`<button id="moreposts" onclick="loadposts(${page+1},false)">more</button>`
+                        }
+                    }
+                })
+            }
+            loadposts(0,true)
+        </script>
+    </body>
+</html>

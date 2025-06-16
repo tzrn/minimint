@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title></title>
+        <link rel="stylesheet" href="styles.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+
+    <body class="c">
+        <div id="notif">
+        </div>
+
+        <h1>log in</h1><hr>
+        <form action="javascript: log()">
+            username: <input id="username"><br>
+            password: <input id="password" type="password"><br>
+            <input id="submit" type="submit"><hr>
+            <p>Don't have an account? <a href="/register.html">register</a></p>
+        </form>
+
+        <script src="common.js"></script>
+        <script>
+            function log() {
+                $('submit').disabled=true;
+                post("login",{Name:$("username").value, Password:$("password").value}).then(r=>r.json()).then(j=>{
+                    if(j.err) {
+                        notify(j.err)
+                        $('submit').disabled=false;
+                    } else {
+                          const d = new Date();
+                          d.setMonth(d.getMonth() + 1);
+                          const ex = ";expires=" + d.toUTCString();
+                        document.cookie=`ID=${j.ID}${ex}`
+                        document.cookie=`Session=${j.Session}${ex}`
+                        //window.location.replace(`/user.html?id=${j.ID}`);
+                        window.location.replace(`/index.html`);
+                    }
+                })
+            }
+        </script>
+    </body>
+</html>

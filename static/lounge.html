@@ -1,0 +1,259 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="/styles.css">
+<style>
+canvas {
+    height:100%;
+    max-height:90vh;
+    max-width:90vw;
+    aspect-ratio:4/3;
+    /*image-rendering:pixelated;
+    image-rendering:crisp-edges;*/
+    border:3px hotpink solid !important;
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+}
+canvas:focus {
+    border:3px black solid !important;
+}
+body, html, canvas {
+    padding:0;
+    margin:0;
+}
+</style>
+    </head>
+
+    <body>
+        <div id="notif"></div>
+
+        <div style="display:flex;flex-wrap:wrap;flex-direction:row;justify-items:center;justify-content:center;width:100vw">
+            <canvas id="canvas" tabindex="1"></canvas>
+            <div style="display:flex;flex-direction:column;margin:10px;">
+                <p>Chat<p><hr>
+                <div id="chat" style="width:100%;overflow:auto;max-height:30vh;height:30vh;"></div>
+                <form style="position:sticky; bottom:0; display:flex; justify-content:center;" action="javascript:sendMessage()">
+                    <input id="message">
+                    <input type="submit">
+                </form>
+            </div>
+        </div>
+
+        <script src="common.js"></script>
+        <script>
+            const c=$('canvas')
+            const ctx=c.getContext('2d')
+            const w=800, h=600
+            c.width=w
+            c.height=h
+            ctx.font="20px monospace"
+
+            function getcolor(id) {
+                console.log(id)
+                id=parseInt(id)
+                return ['hotpink','red','blue','lime','orange','black','purple','yellow'][(1234567890^id*id+id)%8]
+            }
+
+            let users={}
+            let me={X:0,Y:0,Name:'',vx:0,vy:0,oldx:0,oldy:0,msg:[],msgcooldown:0,color:getcolor(cookie('ID'))}
+            let camera={x:w/2,y:h/2}
+
+            function sendPos() {
+                if(me.X!=me.oldx||me.Y!=me.oldy) {
+                    lsocket.send(JSON.stringify({T:1,X:me.X,Y:me.Y}))
+                    me.oldx=me.X
+                    me.oldy=me.Y
+                }
+                setTimeout(()=>{
+                    sendPos()
+                },250)
+            }
+
+            function setupuser(u,id) {
+                u.ax=u.X;
+                u.ay=u.Y;
+                u.msgcooldown=0;
+                u.msg=[]
+                u.color=getcolor(id)
+            }
+
+            function lconnect() {
+                lsocket = new WebSocket(`wss://${addr}loungesock/`);
+
+                    lsocket.addEventListener('open', event => {
+                        lsocket.send(JSON.stringify(addcred({})));
+                        sendPos()
+                    });
+
+                    lsocket.addEventListener('message', event => {
+                        d=JSON.parse(event.data)
+                        switch(d.T) {
+                            case 0: //inital user list, and this client's username
+                            me.Name=d.Name
+                            users=d.Us;
+                            for(const id in users) {
+                                setupuser(users[id],id)
+                            }
+                            break;
+
+                            case 1: //move
+                            u=users[d.ID]
+                            u.ax=d.X;
+                            u.ay=d.Y;
+                            break;
+
+                            case 2: //join
+                                //ax - actual x that I got from server
+                                users[d.ID]={Name:d.Name,X:0,Y:0}
+                                setupuser(users[d.ID],d.ID)
+                            break;
+
+                            case 3: //leave
+                            delete users[d.ID]
+                            break;
+
+                            case 4: //chat message
+                            chataddmsg(d.ID,users[d.ID].Name,d.Contents)
+                            users[d.ID].msg.push(d.Contents)
+                            users[d.ID].msgcooldown+=120
+                            break;
+                        }
+                    });
+
+                    lsocket.addEventListener('close', event => {
+                        setTimeout(()=>{
+                            lconnect()
+                        }, 2000)
+                    });
+            }
+            lconnect()
+
+            function chataddmsg(id, name, contents) {
+                el=$('chat')
+                el.innerHTML+=`<div><a href="/user.html?id=${id}">${name}</a><br><p class="break">${contents}</p></div><hr>`
+                el.scrollTop=el.scrollHeight
+            }
+
+            function sendMessage() {
+                msg=$('message').value
+                lsocket.send(JSON.stringify({T:4,Msg:msg}))
+                chataddmsg(cookie('ID'),me.Name,msg)
+                $('message').value=''
+                me.msg.push(msg)
+                me.msgcooldown+=120
+            }
+
+            function drawUser(u) {
+                ctx.fillStyle=u.color
+                let nw=ctx.measureText(u.Name).width
+                ctx.fillText(u.Name,u.X-nw/2+15,u.Y-10)
+                ctx.fillRect(u.X,u.Y,30,30)
+            }
+            function drawMsg(u) {
+                if(u.msgcooldown>0) {
+                    for(const n in u.msg) {
+                        let msg=u.msg[n]
+                        let size=ctx.measureText(msg)
+                        let w=size.width, h=20
+                        ctx.fillStyle='white'
+                        ctx.strokeStyle='black'
+                        ctx.beginPath();
+                        ctx.roundRect(u.X-w/2-5+15, u.Y-40-n*30-h, w+10, h+5, [5])
+                        ctx.fill()
+                        ctx.stroke()
+                        ctx.strokeStyle='none'
+                        ctx.fillStyle='black'
+                        ctx.fillText(u.msg[n], u.X-w/2+15, u.Y-40-n*30)
+                    }
+                    u.msgcooldown--;
+                } else {
+                    u.msg=[]
+                }
+            }
+
+            function draw() {
+                var t = Date.now()
+                ctx.clearRect(0,0,w,h)
+
+                for(let y=-h; y<h; y+=100) {
+                    for(let x=-w; x<w; x+=100) {
+                        ctx.fillStyle=(x+y)%200==0?"#EEFFBB":"#FFFFEE"
+                        ctx.fillRect(x+camera.x%200+w/2,y+camera.y%200+h/2,100,100)
+                    }
+                }
+
+                ctx.save()
+                ctx.translate(Math.floor(camera.x),Math.floor(camera.y))
+                for(const id in users) {
+                    u=users[id]
+                    u.X+=(u.ax-u.X)/64
+                    u.Y+=(u.ay-u.Y)/64
+                    drawUser(u)
+                }
+                drawUser(me)
+                drawMsg(me)
+                for(const id in users) {
+                    drawMsg(users[id])
+                }
+                ctx.restore()
+
+                me.X+=me.vx;
+                me.Y+=me.vy;
+                camera.x-=(camera.x-(w/2-me.X))/64
+                camera.y-=(camera.y-(h/2-me.Y))/64
+
+                //cap fps at 60
+                setTimeout(()=>window.requestAnimationFrame(draw),
+                    16-(Date.now()-t))
+            }
+
+            const speed=3
+            c.addEventListener('keydown',e=>{
+                var code = e.keyCode
+                switch(e.keyCode) {
+                    case 83: me.vy=speed; break;
+                    case 87: me.vy=-speed; break;
+                    case 68: me.vx=speed; break;
+                    case 65: me.vx=-speed; break;
+                }
+            },false)
+
+            c.addEventListener('keyup',e=>{
+                var code = e.keyCode
+                switch(e.keyCode) {
+                    case 83: me.vy=0; break;
+                    case 87: me.vy=0; break;
+                    case 68: me.vx=0; break;
+                    case 65: me.vx=0; break;
+                }
+            },false)
+
+            c.addEventListener('touchstart',e=>{
+                let x=(event.targetTouches[0] ? event.targetTouches[0].pageX : event.changedTouches[event.changedTouches.length-1].pageX)
+                let y=(event.targetTouches[0] ? event.targetTouches[0].pageY : event.changedTouches[event.changedTouches.length-1].pageY)
+                let w=c.scrollWidth;
+                let h=c.scrollHeight;
+
+                if(x>w-w/4) {
+                    me.vx=speed;
+                } else if(x<w/4) {
+                    me.vx=-speed;
+                } else if(y>h/2) {
+                    me.vy=speed;
+                } else {
+                    me.vy=-speed;
+                }
+            })
+
+            c.addEventListener('touchend',e=>{
+                me.vx=0;
+                me.vy=0;
+            })
+            window.requestAnimationFrame(draw)
+        </script>
+    </body>
+</html>

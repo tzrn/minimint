@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title></title>
+        <link rel="stylesheet" href="styles.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+
+    <body>
+        <div id="notif">
+        </div>
+
+        <div class="modal" id="files">
+            <div class="modalin">
+                <p>Upload new file</p>
+                    <input class="filename" id='file' type="file">
+                    <button onclick='upload()'>Upload file...</button><hr>
+                <p>Files</p><hr>
+                <div style="display:flex;justify-content:center;margin:10px;">
+                    <form action="javascript:fileSearch()">
+                        <input id="filequery" placeholder="query">
+                        <input type="submit" value="search">
+                    </form>
+                </div>
+                <div style="max-height:30vh;overflow:auto" id="filelist">
+                </div>
+
+                <hr><button onclick="this.parentElement.parentElement.style.display='none'">close</button>
+            </div>
+        </div>
+
+        <div class="modal" style='z-index:9990' id="post">
+            <div class="modalin">
+                new post:<br>
+                <textarea id="newpost" style="width:100%;height:100px;"></textarea><br>
+                <p id="attachment_info"></p>
+                <button type="button" onclick="$('files').style.display='flex';">📎</button>
+                <button id="sendpost">post</button>
+                <button onclick="cancelpost()" type="button">cancel</button>
+            </div>
+        </div>
+
+        <div style="position:sticky;top:0;background-color:white;padding-top:10px;z-index:9980">
+        <p>logged in as:<b id="name"></b> 
+        <a href="/chats.html">chats</a> 
+        <a href="/search.html">search</a>
+        <a href="/lounge.html">lounge</a>
+        <button onclick="logout()">logout</button></p><hr>
+        </div>
+
+        <h2>New people:</h2>
+        <div id="newpeople" class="list">
+        </div><hr>
+
+        <h3>Posts from people you follow:</h3>
+        <div id="posts">
+        </div>
+
+        <script src="common.js"></script>
+        <script>
+            let userid = parseInt(cookie("ID"));
+            apost(`user`,{UserID:userid}).then(r=>r.json()).then(j=>{
+                if(j.err) {
+                    notify(j.err)
+                } else {
+                    $('name').innerHTML=`<a href="/user.html?id=${userid}">${j.Name}</a>`
+                }
+            })
+
+            apost("newusers",{Page:0}).then(r=>r.json()).then(j=>{
+                    if(j.err) {
+                        notify(j.err)
+                    } else {
+                        for(let i=0;i<j.Us.length;i++) {
+                            $("newpeople").innerHTML+=`
+                                <div><a href="/user.html?id=${j.Us[i].ID}">${j.Us[i].Name}</a></div>
+                            `
+                        }
+                    }
+                })
+
+            function loadposts(page) {
+                apost("feed",{Page:page}).then(r=>r.json()).then(j=>{
+                    if(j.err) {
+                        notify(j.err)
+                    } else {
+                        morebtn=$("moreposts")
+                        if(morebtn) {
+                            morebtn.remove()
+                        }
+                        for(let i=0;i<j.Count;i++) {
+                            $("posts").innerHTML+=formReply(j.Ps[i])
+                        }
+                        if(j.Count==20) {
+                            $("posts").innerHTML+=`<button id="moreposts" onclick="loadposts(${page+1})">more</button>`
+                        }
+                    }
+                })
+            }
+            loadposts(0)
+
+            function logout() {
+                delcookie("ID")
+                delcookie("Session")
+                window.location.replace(`/login.html`);
+            }
+
+            loadfiles(0,'')
+        </script>
+    </body>
+</html>

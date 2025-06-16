@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title></title>
+        <link rel="stylesheet" href="styles.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+
+    <body class="c">
+        <div id="notif">
+        </div>
+
+        <h1>register</h1><hr>
+        <form action="javascript:reg()">
+            username: <input required id="username"><br>
+            password: <input required id="password" type="password"><br>
+            confirm : <input required id="password_conf" type="password"><br>
+            <input id='submit' type="submit">
+            <hr>
+            <p>Already have an account? <a href="/login.html">Log in</a></p>
+        </form>
+
+        <script src="common.js"></script>
+        <script>
+            function reg() {
+                if($('password').value!=$('password_conf').value) {
+                    notify("password values should match!")
+                    return
+                }
+                $('submit').disabled=true;
+                post("register",{Name:$("username").value, Password:$("password").value}).then(r=>{
+                    if(r.status==200) {
+                        window.location.replace(`/login.html`);
+                    } else {
+                        $('submit').disabled=false;
+                        r.json().then(j=>{
+                            notify(j.err)
+                        })
+                    }
+                })
+            }
+        </script>
+    </body>
+</html>

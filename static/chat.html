@@ -1,0 +1,119 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title></title>
+        <link rel="stylesheet" href="styles.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+form * {
+    font-size:15px;
+}
+</style>
+    </head>
+
+    <body>
+        <div id="notif">
+        </div>
+        <div class="modal" id="files">
+            <div class="modalin">
+                <p>Upload new file</p>
+                    <input class="filename" id='file' type="file">
+                    <button onclick='upload()'>Upload file...</button><hr>
+                <p>Files</p><hr>
+                <div style="display:flex;justify-content:center;margin:10px;">
+                    <form action="javascript:fileSearch()">
+                        <input id="filequery" placeholder="query">
+                        <input type="submit" value="search">
+                    </form>
+                </div>
+                <div style="max-height:30vh;overflow:auto" id="filelist">
+                </div>
+                <hr><button onclick="this.parentElement.parentElement.style.display='none'">close</button>
+            </div>
+        </div>
+
+        <div style="position:sticky;top:0;background-color:white;padding-top:10px;z-index:9980;">
+            <div style="display:flex;justify-content:space-between;">
+                <h3 style="display:inline;margin:0;" id="name"></h3>
+                <a class="home" href="/"><img src="/home.png"></a>
+            </div><hr>
+        </div>
+
+        <div id="messages" style="display:top;max-width:500px;margin:auto;align-content:end;margin-top:50px;margin-bottom:30px;">
+        </div>
+
+        <form style="background-color:white;position:fixed;left:0;bottom:0;width:100%" class="c" action="javascript:sendmsg()">
+            <p id="attachment_info"></p>
+            <div style="display:flex;justify-content:center;">
+                <button type="button" onclick="$('files').style.display='flex';">📎</button>
+                <input style="" id="msg">
+                <input value="send" type="submit">
+            </div>
+        </form>
+
+        <script src="common.js"></script>
+        <script>
+            let params = new URLSearchParams(document.location.search);
+            let userid = parseInt(params.get("id"));
+            let id = cookie("ID");
+
+            apost(`user`,{UserID:userid}).then(r=>r.json()).then(j=>{
+                if(j.err) {
+                    notify(j.err)
+                } else {
+                    $('name').innerHTML=`<div style="width:10px;height:10px;border:2px black solid;border-radius:10px;background-color:${j.Online?'lime':'red'};display:inline-block;"></div><a href="/user.html?id=${userid}">${j.Name}</a>`
+                }
+            })
+
+            function loadmsgs(page) {
+                apost("messages",{UserID:userid,Page:page}).then(r=>r.json()).then(j=>{
+                    if(j.err) {
+                        notify(j.err)
+                    } else {
+                        morebtn=$("morebtn")
+                        if(morebtn) {
+                            morebtn.remove()
+                        }
+                        messages=""
+                        for(let i=0;i<j.Count;i++) {
+                            msg=j.Ms[i]
+                            messages=tomsg(msg.Time,msg.Contents,!(msg.From==userid),msg.Attachments)+messages
+                        }
+                        if(j.Count==20) {
+                            messages=`<button id="morebtn" style="margin:auto;display:block;" onclick="loadmsgs(${page+1})">more</button>`+messages
+                        }
+
+                        el=$("messages")
+                        let height=el.scrollHeight
+                        el.innerHTML=messages+el.innerHTML;
+                        if(page==0) {
+                            window.scrollTo(0,el.scrollHeight)
+                        } else {
+                            window.scrollTo(0,el.scrollHeight-height)
+                        }
+                    }
+                })
+            }
+            loadmsgs(0)
+
+            const outaudio = new Audio("/out.wav");
+            function sendmsg() {
+                b=addcred({})
+                b.To=parseInt(userid)
+                b.Contents=$("msg").value
+                b.Attachments=selectedFiles
+                socket.send(JSON.stringify(b))
+                queue.push(()=>{
+                    el=$("messages")
+                    el.innerHTML+=tomsg(Date.now()/1000,b.Contents,true,selectedFiles.map(f=>{return files[f]})) 
+                    window.scrollTo(0, el.scrollHeight)
+                    deselectFiles()
+                    $('attachment_info').innerHTML=''
+                    $("msg").value=""
+                    outaudio.cloneNode().play()
+                })
+            }
+            loadfiles(0,'')
+        </script>
+    </body>
+</html>

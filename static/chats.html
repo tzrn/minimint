@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title></title>
+        <link rel="stylesheet" href="styles.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+
+    <body>
+        <div id="notif">
+        </div>
+
+        <h2>Chats</h2>
+        <div id="chats">
+        </div>
+
+        <script src="common.js"></script>
+        <script>
+            function loadposts(page) {
+                apost("chats",{Page:page}).then(r=>r.json()).then(j=>{
+                    if(j.err) {
+                        notify(j.err)
+                    } else {
+                        morebtn=$("moreposts")
+                        if(morebtn) {
+                            morebtn.remove()
+                        }
+                        console.log(j)
+                        for(let i=0;i<j.Count;i++) {
+                            c=j.Cs[i]
+                            $("chats").innerHTML+=`<div><a href="/chat.html?id=${c.ID}">${c.Name}</a><br><small>${dateStr(c.Time)}</small><p>${c.Contents}</p></div><hr>`
+                        }
+                        if(j.Count==20) {
+                            //$("posts").innerHTML+=`<button id="moreposts" onclick="loadposts(${page+1})">more</button>`
+                        }
+                    }
+                })
+            }
+            loadposts(0)
+        </script>
+    </body>
+</html>
