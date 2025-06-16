@@ -28,7 +28,7 @@
                     return
                 }
                 $('submit').disabled=true;
-                post("register",{Name:$("username").value, Password:$("password").value}).then(r=>{
+                post("register",{Name:$("username").value.trim(), Password:$("password").value}).then(r=>{
                     if(r.status==200) {
                         window.location.replace(`/login.html`);
                     } else {

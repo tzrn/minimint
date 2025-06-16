@@ -22,7 +22,7 @@
         <script>
             function log() {
                 $('submit').disabled=true;
-                post("login",{Name:$("username").value, Password:$("password").value}).then(r=>r.json()).then(j=>{
+                post("login",{Name:$("username").value.trim(), Password:$("password").value}).then(r=>r.json()).then(j=>{
                     if(j.err) {
                         notify(j.err)
                         $('submit').disabled=false;
