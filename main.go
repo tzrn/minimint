@@ -1236,9 +1236,14 @@ LIMIT 20 OFFSET ?`, b.ID, b.ID, b.Page*20)
 	}))
 
 	mux.HandleFunc("POST /upload/", handle(func(w http.ResponseWriter, r *http.Request) error {
-		err := r.ParseMultipartForm(1024 * 10)
+		r.Body = http.MaxBytesReader(w, r.Body, 1024*1024*10)
+		err := r.ParseMultipartForm(1024)
 		if err != nil {
-			return jErr
+			var maxBytesError *http.MaxBytesError
+			if errors.As(err, &maxBytesError) {
+				return e("uploads are limited to 10mb")
+			}
+			return e("error reading request")
 		}
 
 		var a Auth
@@ -1356,7 +1361,7 @@ LIMIT 20 OFFSET ?`, b.ID, b.ID, b.Page*20)
 
 	server := &http.Server{
 		Handler:      cors(db, mux),
-		ReadTimeout:  5 * time.Second,
+		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}

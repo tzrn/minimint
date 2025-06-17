@@ -98,7 +98,7 @@
                         $('newstatus').value=j.Status
                         $('postbtn').style.display=''
                     } else {
-                        $('status').innerHTML=esc(j.Status)
+                        $('status').innerHTML=urls(esc(j.Status))
                         el=$('followinfo')
                         if(j.Follows) {
                             el.innerHTML+="follows you<br>"
