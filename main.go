@@ -1237,7 +1237,7 @@ LIMIT 20 OFFSET ?`, b.ID, b.ID, b.Page*20)
 
 	mux.HandleFunc("POST /upload/", handle(func(w http.ResponseWriter, r *http.Request) error {
 		r.Body = http.MaxBytesReader(w, r.Body, 1024*1024*10)
-		err := r.ParseMultipartForm(1024)
+		err := r.ParseMultipartForm(1024 * 1024 * 10)
 		if err != nil {
 			var maxBytesError *http.MaxBytesError
 			if errors.As(err, &maxBytesError) {
@@ -1260,17 +1260,18 @@ LIMIT 20 OFFSET ?`, b.ID, b.ID, b.Page*20)
 
 		contentType := handler.Header.Get("Content-Type")
 		types := map[string]int{
-			"image/jpeg":  1,
-			"image/png":   1,
-			"image/webp":  1,
-			"image/gif":   1,
-			"video/mp4":   2,
-			"video/webm":  2,
-			"audio/mpeg":  3,
-			"audio/flac":  3,
-			"audio/x-m4a": 3,
-			"audio/aac":   3,
-			"audio/wav":   3,
+			"image/jpeg":       1,
+			"image/png":        1,
+			"image/webp":       1,
+			"image/gif":        1,
+			"video/mp4":        2,
+			"video/webm":       2,
+			"video/x-matroska": 2,
+			"audio/mpeg":       3,
+			"audio/flac":       3,
+			"audio/x-m4a":      3,
+			"audio/aac":        3,
+			"audio/wav":        3,
 		}
 		t, ok := types[contentType]
 		if !ok {
@@ -1361,8 +1362,8 @@ LIMIT 20 OFFSET ?`, b.ID, b.ID, b.Page*20)
 
 	server := &http.Server{
 		Handler:      cors(db, mux),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 	mux.Handle("/", http.FileServer(http.Dir("static")))
