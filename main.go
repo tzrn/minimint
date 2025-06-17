@@ -102,6 +102,11 @@ type attachment struct {
 	Type int
 }
 
+type taginfo struct {
+	Name  string
+	Posts int
+}
+
 func (a Auth) data() (int, string) {
 	return a.ID, a.Session
 }
@@ -292,6 +297,7 @@ func main() {
 	var regmx sync.Mutex
 	var loungemx sync.Mutex
 	var msgmx sync.Mutex
+	var hashtagmx sync.Mutex
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /login/", handle(func(w http.ResponseWriter, r *http.Request) error {
@@ -461,6 +467,36 @@ func main() {
 		postid, err := postrow.LastInsertId()
 		if err != nil {
 			return e("error getting post id")
+		}
+
+		rx := regexp.MustCompile(`#[^ \t\n]{1,256}`)
+		matches := rx.FindAllStringSubmatch(b.Contents, -1)
+		for _, v := range matches {
+			m := v[0][1:]
+			var tagid int64
+
+			hashtagmx.Lock()
+			err := db.QueryRow("SELECT id FROM tag WHERE name=?", m).Scan(&tagid)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					tagrow, err := tx.ExecContext(ctx, "INSERT INTO tag(name) VALUES(?)", m)
+					if err != nil {
+						return e("error creating hashtag")
+					}
+					tagid, err = tagrow.LastInsertId()
+					if err != nil {
+						return e("error getting tag id")
+					}
+				} else {
+					return e("error checking hashtag existence")
+				}
+			}
+			hashtagmx.Unlock()
+
+			_, err = tx.ExecContext(ctx, "INSERT INTO post_tag(post, tag) VALUES(?,?)", postid, tagid)
+			if err != nil {
+				return e("error attaching post to tag")
+			}
 		}
 
 		for _, a := range b.Attachments {
@@ -1344,6 +1380,114 @@ LIMIT 20 OFFSET ?`, b.ID, b.ID, b.Page*20)
 		}
 
 		fmt.Fprintf(w, string(j))
+		return nil
+	}))
+
+	mux.HandleFunc("POST /feedback/", handle(func(w http.ResponseWriter, r *http.Request) error {
+		var b struct {
+			Auth
+			Contents string
+			Type     int
+		}
+		err := json.NewDecoder(r.Body).Decode(&b)
+		if err != nil {
+			fmt.Println(err)
+			return jErr
+		}
+		ok := auth(db, b)
+		if !ok {
+			return aErr
+		}
+
+		if t := b.Type; t < 1 || t > 3 {
+			return e("feedback type should be between 1 and 3")
+		}
+
+		if l := len(b.Contents); l < 10 || l > 2048 {
+			return e("feedback text length should be between 10 and 2048 characters")
+		}
+
+		_, err = db.Exec("INSERT INTO feedback(user, contents, type, time) values(?,?,?,unixepoch('now'))", b.ID, b.Contents, b.Type)
+		if err != nil {
+			return e("error leaving feedback")
+		}
+		return nil
+	}))
+
+	mux.HandleFunc("POST /tag/", handle(func(w http.ResponseWriter, r *http.Request) error {
+		var b struct {
+			Auth
+			Tag  string
+			Page int
+		}
+		err := json.NewDecoder(r.Body).Decode(&b)
+		if err != nil {
+			return jErr
+		}
+		ok := auth(db, b)
+		if !ok {
+			return aErr
+		}
+
+		rows, err := db.Query("SELECT post.id, post.contents, post.time, post.parent_post_id, count(child.id), user.name, post.user_id FROM post_tag JOIN post ON post_tag.post=post.id JOIN tag ON post_tag.tag=tag.id LEFT JOIN post AS child ON post.id = child.parent_post_id JOIN user ON post.user_id=user.id WHERE tag.name=? GROUP BY post.id ORDER BY post.time DESC LIMIT 20 OFFSET ?", b.Tag, b.Page*20)
+		if err != nil {
+			return e("error getting posts")
+		}
+		defer rows.Close()
+
+		j, err := scanPosts(db, rows)
+		if err != nil {
+			return err
+		}
+		w.Write(j)
+
+		return nil
+	}))
+
+	mux.HandleFunc("POST /tags/", handle(func(w http.ResponseWriter, r *http.Request) error {
+		var b struct {
+			Auth
+			Page  int
+			Query string
+		}
+		err := json.NewDecoder(r.Body).Decode(&b)
+		if err != nil {
+			return jErr
+		}
+		ok := auth(db, b)
+		if !ok {
+			return aErr
+		}
+
+		var tags struct {
+			Count int
+			Ts    []taginfo
+		}
+
+		b.Query = strings.ReplaceAll(b.Query, "%", "\\%")
+		b.Query = strings.ReplaceAll(b.Query, "_", "\\_")
+		rows, err := db.Query("SELECT name, count(tag.id) as c FROM post_tag JOIN tag ON post_tag.tag=tag.ID WHERE name LIKE ? ESCAPE '\\' GROUP BY tag.id ORDER BY c DESC LIMIT 20 OFFSET ?", "%"+b.Query+"%", b.Page*20)
+		if err != nil {
+			fmt.Println(err)
+			return e("could not get hashtag info")
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			t := taginfo{}
+			if err := rows.Scan(&t.Name, &t.Posts); err != nil {
+				return e("couold not scan tag info")
+			}
+			tags.Ts = append(tags.Ts, t)
+		}
+		tags.Count = len(tags.Ts)
+
+		j, err := json.Marshal(tags)
+		if err != nil {
+			return e("error sending tag info")
+		}
+
+		w.Write(j)
 		return nil
 	}))
 

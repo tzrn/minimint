@@ -40,48 +40,18 @@
             </div>
         </div>
 
-        <div style="position:sticky;top:0;background-color:white;padding-top:10px;z-index:9980">
-        <p>logged in as:<b id="name"></b> 
-        <a href="/chats.html">chats</a> 
-        <a href="/tags.html">hashtags</a> 
-        <a href="/search.html">people</a>
-        <a href="/lounge.html">lounge</a>
-        <button onclick="logout()">logout</button></p><hr>
-        </div>
-
-        <h2>New people:</h2>
-        <div id="newpeople" class="list">
-        </div><hr>
-
-        <h3>Posts from people you follow:</h3>
+        <h2 class="break" id="title"></h2><hr>
         <div id="posts">
         </div>
 
         <script src="common.js"></script>
         <script>
-            let userid = parseInt(cookie("ID"));
-            apost(`user`,{UserID:userid}).then(r=>r.json()).then(j=>{
-                if(j.err) {
-                    notify(j.err)
-                } else {
-                    $('name').innerHTML=`<a href="/user.html?id=${userid}">${j.Name}</a>`
-                }
-            })
-
-            apost("newusers",{Page:0}).then(r=>r.json()).then(j=>{
-                    if(j.err) {
-                        notify(j.err)
-                    } else {
-                        for(let i=0;i<j.Us.length;i++) {
-                            $("newpeople").innerHTML+=`
-                                <div><a href="/user.html?id=${j.Us[i].ID}">${j.Us[i].Name}</a></div>
-                            `
-                        }
-                    }
-                })
+            let params = new URLSearchParams(document.location.search);
+            let tag = params.get("tag");
+            $('title').innerHTML=`#${esc(tag)}`
 
             function loadposts(page) {
-                apost("feed",{Page:page}).then(r=>r.json()).then(j=>{
+                apost("tag",{Tag:tag,Page:page}).then(r=>r.json()).then(j=>{
                     if(j.err) {
                         notify(j.err)
                     } else {
@@ -99,13 +69,6 @@
                 })
             }
             loadposts(0)
-
-            function logout() {
-                delcookie("ID")
-                delcookie("Session")
-                window.location.replace(`/login.html`);
-            }
-
             loadfiles(0,'')
         </script>
     </body>

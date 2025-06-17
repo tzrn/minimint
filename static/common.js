@@ -57,11 +57,15 @@ function info(msg) {
 }
 
 function esc(str) {
-    return(str.replace('<','&lt;').replace('>','&gt;'))
+    s=str.replaceAll('<','&lt;')
+    s=s.replaceAll('>','&gt;')
+    return s
 }
 
 function urls(str) {
-    return str.replaceAll(/(https?:\/\/)?([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gi, "<a href='https://$2'>$1$2</a>");
+    s=str.replaceAll(/(https?:\/\/)?([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gi, "<a href='https://$2'>$1$2</a>");
+    s=s.replaceAll(/#([^ \t\n]{1,256})/gi, "<a href='/tag.html?tag=$1'>#$1</a>");
+    return s
 }
 
 function dateStr(date) {
@@ -72,7 +76,7 @@ function dateStr(date) {
 function formReply(j,showparent=true) {
         let d=new Date(j.Time*1000)
         let post=""
-        post+=`<div><a href="/user.html?id=${j.UserID}">${j.Username}</a> <small>${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU')}</small><p>${urls(esc(j.Contents))}</p>`
+        post+=`<div><a href="/user.html?id=${j.UserID}">${j.Username}</a> <small>${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU')}</small><p class="break">${urls(esc(j.Contents))}</p>`
         post+=attachments2html(j.Attachments)
         let p = j.Parent
         if(p&&showparent) {

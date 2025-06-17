@@ -57,7 +57,7 @@
                         notify(j.err)
                     } else {
                         $('title').innerHTML=`${j.Count} replies:`
-                        op=`<div style="font-size:120%"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><a href="/user.html?id=${j.UserID}">${j.Name}</a><small>${dateStr(j.Time)}</small><a style class="home" href="/"><img src="/home.png"></a></div><p>${urls(esc(j.Contents))}</p>${attachments2html(j.Attachments)}`
+                        op=`<div style="font-size:120%"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><a href="/user.html?id=${j.UserID}">${j.Name}</a><small>${dateStr(j.Time)}</small><a style class="home" href="/"><img src="/home.png"></a></div><p style="word-break:break-word;">${urls(esc(j.Contents))}</p>${attachments2html(j.Attachments)}`
                         let p = j.Parent
                         if(p) {
                             op+=`<b>in reply to <a href="/post.html?id=${j.Parent.ID}">post</a> by <a href="/user.html?id=${p.UserID}">${p.Username}</a>:</b><br> <div><small>${dateStr(p.Time)}</small><p>${urls(esc(p.Contents))}</p>${attachments2html(p.Attachments)}`
