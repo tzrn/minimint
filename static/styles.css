@@ -93,6 +93,8 @@ hr {
 .thumbwrap {
     width:80px;
     text-align:center;
+    margin-top:auto;
+    margin-bottom:auto;
 }
 .filename {
     max-width:300px;
