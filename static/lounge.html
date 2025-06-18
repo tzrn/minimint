@@ -59,7 +59,6 @@ body, html, canvas {
             ctx.font="20px monospace"
 
             function getcolor(id) {
-                console.log(id)
                 id=parseInt(id)
                 return ['hotpink','red','blue','lime','orange','black','purple','yellow'][(1234567890^id*id+id)%8]
             }
@@ -154,10 +153,33 @@ body, html, canvas {
             }
 
             function drawUser(u) {
+                ctx.lineWidth = 0.5;
                 ctx.fillStyle=u.color
+                ctx.strokeStyle='black'
                 let nw=ctx.measureText(u.Name).width
-                ctx.fillText(u.Name,u.X-nw/2+15,u.Y-10)
-                ctx.fillRect(u.X,u.Y,30,30)
+                ctx.fillText(u.Name,u.X-nw/2,u.Y-10)
+                ctx.strokeText(u.Name,u.X-nw/2,u.Y-10)
+                ctx.beginPath();
+
+                ctx.moveTo(u.X, u.Y);
+                ctx.lineTo(u.X+25, u.Y+15);
+                ctx.lineTo(u.X, u.Y+30);
+                ctx.lineTo(u.X-25, u.Y+15);
+                ctx.lineTo(u.X, u.Y);
+                ctx.fill();
+                ctx.stroke();
+                ctx.moveTo(u.X+25, u.Y+15);
+                ctx.lineTo(u.X+25, u.Y+30);
+                ctx.lineTo(u.X, u.Y+45);
+                ctx.lineTo(u.X, u.Y+30);
+                ctx.fill();
+                ctx.stroke();
+                ctx.moveTo(u.X-25, u.Y+15);
+                ctx.lineTo(u.X-25, u.Y+30);
+                ctx.lineTo(u.X, u.Y+45);
+                ctx.lineTo(u.X, u.Y+30);
+                ctx.fill();
+                ctx.stroke();
             }
             function drawMsg(u) {
                 if(u.msgcooldown>0) {
@@ -168,12 +190,12 @@ body, html, canvas {
                         ctx.fillStyle='white'
                         ctx.strokeStyle='black'
                         ctx.beginPath();
-                        ctx.roundRect(u.X-w/2-5+15, u.Y-40-n*30-h, w+10, h+5, [5])
+                        ctx.roundRect(u.X-w/2-5, u.Y-40-n*30-h, w+10, h+5, [5])
                         ctx.fill()
                         ctx.stroke()
                         ctx.strokeStyle='none'
                         ctx.fillStyle='black'
-                        ctx.fillText(u.msg[n], u.X-w/2+15, u.Y-40-n*30)
+                        ctx.fillText(u.msg[n], u.X-w/2, u.Y-40-n*30)
                     }
                     u.msgcooldown--;
                 } else {
@@ -187,12 +209,21 @@ body, html, canvas {
 
             function draw() {
                 var t = Date.now()
-                ctx.clearRect(0,0,w,h)
+                ctx.fillStyle="#EEFFBB"
+                ctx.fillRect(0,0,w,h)
 
-                for(let y=-h; y<h; y+=100) {
+                for(let y=-h; y<h; y+=60) {
                     for(let x=-w; x<w; x+=100) {
-                        ctx.fillStyle=(x+y)%200==0?"#EEFFBB":"#FFFFEE"
-                        ctx.fillRect(x+camera.x%200+w/2,y+camera.y%200+h/2,100,100)
+                        ctx.fillStyle="#FFFFEE"
+                        let mx=x+camera.x%100+w/2
+                        let my=y+camera.y%60+h/2
+
+                        ctx.beginPath();
+                        ctx.moveTo(mx+50, my);
+                        ctx.lineTo(mx+100, my+30);
+                        ctx.lineTo(mx+50, my+60);
+                        ctx.lineTo(mx, my+30);
+                        ctx.fill();
                     }
                 }
 
