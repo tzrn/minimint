@@ -6,9 +6,8 @@
 <link rel="stylesheet" href="/styles.css">
 <style>
 canvas {
-    height:100%;
-    max-height:90vh;
     max-width:90vw;
+    max-height:98vh;
     aspect-ratio:4/3;
     /*image-rendering:pixelated;
     image-rendering:crisp-edges;*/
@@ -204,19 +203,21 @@ body, html, canvas {
             }
 
             space=180
-            perscreenx=w/space+4
-            perscreeny=h/space+4
+            perscreenx=Math.floor(w/space)+4
+            perscreeny=Math.floor(h/space)+4
 
             function draw() {
                 var t = Date.now()
                 ctx.fillStyle="#EEFFBB"
                 ctx.fillRect(0,0,w,h)
 
+                coffx=camera.x%100+w/2
+                coffy=camera.y%60+h/2
                 for(let y=-h; y<h; y+=60) {
                     for(let x=-w; x<w; x+=100) {
                         ctx.fillStyle="#FFFFEE"
-                        let mx=x+camera.x%100+w/2
-                        let my=y+camera.y%60+h/2
+                        let mx=x+coffx
+                        let my=y+coffy
 
                         ctx.beginPath();
                         ctx.moveTo(mx+50, my);
@@ -227,8 +228,7 @@ body, html, canvas {
                     }
                 }
 
-                ctx.save()
-                ctx.translate(Math.floor(camera.x),Math.floor(camera.y))
+                ctx.translate(camera.x,camera.y)
                 for(const id in users) {
                     u=users[id]
                     u.X+=(u.ax-u.X)/64
@@ -259,14 +259,17 @@ body, html, canvas {
                         }
                     }
                 }
-                ctx.restore()
+                ctx.globalAlpha = 1;
+                Math.floor(camera.y)
+                ctx.translate(-camera.x,-camera.y)
 
                 me.X+=me.vx;
                 me.Y+=me.vy;
-                camera.x-=(camera.x-(w/2-me.X))/64
-                camera.y-=(camera.y-(h/2-me.Y))/64
+                camera.x-=Math.floor((camera.x-(w/2-me.X))/64)
+                camera.y-=Math.floor((camera.y-(h/2-me.Y))/64)
 
                 //cap fps at 60
+                //ctx.fillText(Date.now()-t,100,100)
                 setTimeout(()=>window.requestAnimationFrame(draw),
                     16-(Date.now()-t))
             }
