@@ -30,6 +30,10 @@ body, html, canvas {
 
     <body>
         <div id="notif"></div>
+        <div style="display:none">
+            <img id="tree" src="/tree.png"/>
+            <img id="grass" src="/grass.png"/>
+        </div>
 
         <div style="display:flex;flex-wrap:wrap;flex-direction:row;justify-items:center;justify-content:center;width:100vw">
             <canvas id="canvas" tabindex="1"></canvas>
@@ -45,6 +49,8 @@ body, html, canvas {
 
         <script src="common.js"></script>
         <script>
+            tree=$('tree')
+            grass=$('grass')
             const c=$('canvas')
             const ctx=c.getContext('2d')
             const w=800, h=600
@@ -175,6 +181,10 @@ body, html, canvas {
                 }
             }
 
+            space=180
+            perscreenx=w/space+4
+            perscreeny=h/space+4
+
             function draw() {
                 var t = Date.now()
                 ctx.clearRect(0,0,w,h)
@@ -198,6 +208,25 @@ body, html, canvas {
                 drawMsg(me)
                 for(const id in users) {
                     drawMsg(users[id])
+                }
+
+                ctx.globalAlpha = 0.4;
+                mx=Math.floor(me.X/space)
+                my=Math.floor(me.Y/space)
+                for(let x=mx-perscreenx;x<mx+perscreenx;x++) {
+                    for(let y=my-perscreeny;y<my+perscreeny;y++) {
+                        dx=x*space+((x+y)*123)%200
+                        dy=y*space+dx%200
+                        cx=dx+camera.x
+                        cy=dy+camera.y
+                        if(cx<w+400&&cx>-400&&cy<h+400&&cy>-400){
+                            if((x^y)%3==0) {
+                                ctx.drawImage(tree,dx,dy,400,400)
+                            } else {
+                                ctx.drawImage(grass,dx,dy,100+x%20,100+y%20)
+                            }
+                        }
+                    }
                 }
                 ctx.restore()
 
