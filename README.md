@@ -8,7 +8,7 @@ mkcert 127.0.0.1
 ./socialNetwork local
 ```
 
-To run globally replace minimint.xyz in static/common.js and main.go to with domain and then run
+To run globally replace minimint.xyz in static/common.js and main.go to with your domain and then run
 ```
 ./socialNetwork global
 ```
