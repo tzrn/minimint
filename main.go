@@ -360,6 +360,7 @@ func main() {
 		}
 
 		regmx.Lock()
+		defer regmx.Unlock()
 		ex, err := userNameExists(db, l.Name)
 		if err != nil {
 			return e("error checking user existence")
@@ -378,7 +379,6 @@ func main() {
 		if err != nil {
 			return e("error creating user")
 		}
-		regmx.Unlock()
 
 		return nil
 	}))
@@ -476,6 +476,7 @@ func main() {
 			var tagid int64
 
 			hashtagmx.Lock()
+			defer hashtagmx.Unlock()
 			err := db.QueryRow("SELECT id FROM tag WHERE name=?", m).Scan(&tagid)
 			if err != nil {
 				if err == sql.ErrNoRows {
@@ -491,7 +492,6 @@ func main() {
 					return e("error checking hashtag existence")
 				}
 			}
-			hashtagmx.Unlock()
 
 			_, err = tx.ExecContext(ctx, "INSERT INTO post_tag(post, tag) VALUES(?,?)", postid, tagid)
 			if err != nil {

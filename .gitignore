@@ -1,0 +1,14 @@
+*
+
+!.gitignore
+!LICENSE
+!README.md
+!main.go
+!go.mod
+!go.sum
+!sql.sh
+!static
+!static/*
+
+static/files/*
+!static/files/index.html
