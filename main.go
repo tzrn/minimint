@@ -471,31 +471,43 @@ func main() {
 
 		rx := regexp.MustCompile(`#[^ \t\n]{1,256}`)
 		matches := rx.FindAllStringSubmatch(b.Contents, -1)
+		done := make(map[string]struct{})
+
 		for _, v := range matches {
-			m := v[0][1:]
-			var tagid int64
-
-			hashtagmx.Lock()
-			defer hashtagmx.Unlock()
-			err := db.QueryRow("SELECT id FROM tag WHERE name=?", m).Scan(&tagid)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					tagrow, err := tx.ExecContext(ctx, "INSERT INTO tag(name) VALUES(?)", m)
-					if err != nil {
-						return e("error creating hashtag")
-					}
-					tagid, err = tagrow.LastInsertId()
-					if err != nil {
-						return e("error getting tag id")
-					}
-				} else {
-					return e("error checking hashtag existence")
+			err = func() error {
+				m := v[0][1:]
+				if _, ok := done[m]; ok {
+					return nil
 				}
-			}
+				done[m] = struct{}{}
+				var tagid int64
 
-			_, err = tx.ExecContext(ctx, "INSERT INTO post_tag(post, tag) VALUES(?,?)", postid, tagid)
+				hashtagmx.Lock()
+				defer hashtagmx.Unlock()
+				err := db.QueryRow("SELECT id FROM tag WHERE name=?", m).Scan(&tagid)
+				if err != nil {
+					if err == sql.ErrNoRows {
+						tagrow, err := tx.ExecContext(ctx, "INSERT INTO tag(name) VALUES(?)", m)
+						if err != nil {
+							return e("error creating hashtag")
+						}
+						tagid, err = tagrow.LastInsertId()
+						if err != nil {
+							return e("error getting tag id")
+						}
+					} else {
+						return e("error checking hashtag existence")
+					}
+				}
+
+				_, err = tx.ExecContext(ctx, "INSERT INTO post_tag(post, tag) VALUES(?,?)", postid, tagid)
+				if err != nil {
+					return e("error attaching post to tag")
+				}
+				return nil
+			}()
 			if err != nil {
-				return e("error attaching post to tag")
+				return err
 			}
 		}
 

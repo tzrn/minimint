@@ -34,7 +34,7 @@
                         }
                         for(let i=0;i<j.Count;i++) {
                             r=j.Ts[i]
-                            $("results").innerHTML+=`<a href="/tag.html?tag=${r.Name}">${esc(r.Name)}</a><p>${r.Posts} post(s)</p><hr>`
+                            $("results").innerHTML+=`<a href="/tag.html?tag=${encodeURIComponent(r.Name)}">${esc(r.Name)}</a><p>${r.Posts} post(s)</p><hr>`
                         }
                         if(j.Count==20) {
                             $("results").innerHTML+=`<button id="moreposts" onclick="loadposts(${page+1},false)">more</button>`

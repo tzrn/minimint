@@ -64,7 +64,10 @@ function esc(str) {
 
 function urls(str) {
     s=str.replaceAll(/(https?:\/\/)?([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))/gi, "<a href='https://$2'>$1$2</a>");
-    s=s.replaceAll(/#([^ \t\n]{1,256})/gi, "<a href='/tag.html?tag=$1'>#$1</a>");
+    s=s.replace(/#[^ \t\n]{1,256}/g, (match)=>{
+        m=match.slice(1)
+        return `<a href="/tag.html?tag=${encodeURIComponent(m)}">#${m}</a>`
+    })
     return s
 }
 
