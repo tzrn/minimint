@@ -897,7 +897,7 @@ LIMIT 20 OFFSET ?`, b.ID, b.ID, b.ID, b.Page*20)
 			Ms    []message
 		}
 
-		rows, err := db.Query("SELECT id, contents, time, from_ FROM message WHERE from_=? and to_=? or from_=? and to_=? ORDER BY time DESC LIMIT 20 OFFSET ?", b.UserID, b.ID, b.ID, b.UserID, b.Page*20)
+		rows, err := db.Query("SELECT id, contents, time, from_ FROM message WHERE from_=? and to_=? or from_=? and to_=? ORDER BY time LIMIT 20 OFFSET ?", b.UserID, b.ID, b.ID, b.UserID, b.Page*20)
 		if err != nil {
 			fmt.Println(err)
 			return e("could not get messages")

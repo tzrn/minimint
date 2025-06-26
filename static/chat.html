@@ -77,7 +77,7 @@ form * {
                         messages=""
                         for(let i=0;i<j.Count;i++) {
                             msg=j.Ms[i]
-                            messages=tomsg(msg.Time,msg.Contents,!(msg.From==userid),msg.Attachments)+messages
+                            messages+=tomsg(msg.Time,msg.Contents,!(msg.From==userid),msg.Attachments)
                         }
                         if(j.Count==20) {
                             messages=`<button id="morebtn" style="margin:auto;display:block;" onclick="loadmsgs(${page+1})">more</button>`+messages
